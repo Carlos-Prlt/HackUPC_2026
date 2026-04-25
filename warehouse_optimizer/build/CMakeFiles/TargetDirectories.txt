@@ -1,3 +1,0 @@
-/home/carlos/Downloads/warehouse_optimizer2/warehouse_optimizer/build/CMakeFiles/WarehouseOptimizer.dir
-/home/carlos/Downloads/warehouse_optimizer2/warehouse_optimizer/build/CMakeFiles/edit_cache.dir
-/home/carlos/Downloads/warehouse_optimizer2/warehouse_optimizer/build/CMakeFiles/rebuild_cache.dir
