@@ -1,3 +1,0 @@
-/home/lipa/Escritorio/HackUPC_2026/warehouse-optimizer/build-web/CMakeFiles/warehouse_optimizer.dir
-/home/lipa/Escritorio/HackUPC_2026/warehouse-optimizer/build-web/CMakeFiles/edit_cache.dir
-/home/lipa/Escritorio/HackUPC_2026/warehouse-optimizer/build-web/CMakeFiles/rebuild_cache.dir
