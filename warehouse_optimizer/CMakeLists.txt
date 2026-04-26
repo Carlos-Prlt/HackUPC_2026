@@ -84,6 +84,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     glm::glm
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    COMPUTE_SHADER_PATH="${CMAKE_SOURCE_DIR}/src/optimization/Optimizer.comp"
+)
+
 # Linux-specific runtime deps brought in by GLFW.
 if(UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE dl pthread)
