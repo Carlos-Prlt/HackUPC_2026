@@ -10,9 +10,9 @@
 
 namespace warehouse {
 
-//---------------------------------------------------------------------------//
-// Helpers
-//---------------------------------------------------------------------------//
+/*
+ * Utility helper functions for polygon tests, color generation, and mesh building.
+ */
 
 bool SceneBuilder::pointInPolygon(float x, float y,
                                   const std::vector<WarehouseVertex>& poly) {
@@ -78,6 +78,17 @@ void SceneBuilder::buildPolygonMesh(const std::vector<WarehouseVertex>& poly,
 
 void SceneBuilder::buildCeilingMesh(const WarehouseData& data,
                                     std::vector<glm::vec3>& tris) {
+    /*
+     * Generates a triangulated mesh for the warehouse ceiling.
+     * The ceiling height can vary along the X-axis (piecewise constant).
+     * To ensure the mesh accurately represents both the warehouse perimeter
+     * and the height variations, we create a grid using all unique X coordinates
+     * from both the perimeter and the ceiling profile, and all unique Y coordinates
+     * from the perimeter.
+     * We then evaluate the center of each resulting grid cell to see if it falls
+     * inside the warehouse polygon. If it does, we generate two triangles for that
+     * cell at the appropriate ceiling height.
+     */
     if (data.ceiling.empty()) return;
 
     // X coords: polygon vertices PLUS ceiling segment boundaries -> the
@@ -102,12 +113,16 @@ void SceneBuilder::buildCeilingMesh(const WarehouseData& data,
             const float cx = 0.5f * (xs[i] + xs[i + 1]);
             const float cy = 0.5f * (ys[j] + ys[j + 1]);
             if (!pointInPolygon(cx, cy, data.perimeter)) continue;
+            
+            // Retrieve the ceiling height for the center of this cell
             const float h = data.ceilingAt(cx);
             if (!std::isfinite(h)) continue;
+            
             const glm::vec3 p00{xs[i],     h, ys[j]    };
             const glm::vec3 p10{xs[i + 1], h, ys[j]    };
             const glm::vec3 p11{xs[i + 1], h, ys[j + 1]};
             const glm::vec3 p01{xs[i],     h, ys[j + 1]};
+            
             // Wind so the underside (visible from below) faces -Y.
             tris.push_back(p00); tris.push_back(p11); tris.push_back(p10);
             tris.push_back(p00); tris.push_back(p01); tris.push_back(p11);
@@ -115,15 +130,22 @@ void SceneBuilder::buildCeilingMesh(const WarehouseData& data,
     }
 }
 
-//---------------------------------------------------------------------------//
-// Public
-//---------------------------------------------------------------------------//
+/*
+ * Public API implementation for scene building.
+ * Constructs the 3D representation of the warehouse, bays, and gaps.
+ */
 
 Scene SceneBuilder::build(const WarehouseData& data,
                           const std::vector<PlacedBay>& placements) {
+    /*
+     * Main builder function that converts logical warehouse data and optimized
+     * bay placements into a renderable 3D Scene object.
+     * This involves generating geometry for the floor, ceiling, obstacles,
+     * placed bays, and gap visualizations.
+     */
     Scene s;
 
-    // World metrics.
+    // World metrics: calculate the center and extents of the warehouse.
     s.worldCenter = {
         0.5f * (data.minX + data.maxX),
         0.0f,
@@ -135,7 +157,7 @@ Scene SceneBuilder::build(const WarehouseData& data,
         data.maxY - data.minY
     };
 
-    // ---- Floor mesh, clipped to perimeter. ----
+    // Floor mesh, clipped to perimeter.
     {
         std::vector<float> xs, ys;
         xs.reserve(data.perimeter.size());
@@ -151,17 +173,17 @@ Scene SceneBuilder::build(const WarehouseData& data,
         buildPolygonMesh(data.perimeter, xs, ys, 0.0f, s.floorVertices);
     }
 
-    // ---- Perimeter line loop. ----
+    // Perimeter line loop.
     s.perimeterLineLoop.reserve(data.perimeter.size());
     for (const auto& v : data.perimeter) {
         s.perimeterLineLoop.push_back({v.x, 0.5f, v.y});
     }
 
-    // ---- Ceiling mesh (translucent). ----
+    // Ceiling mesh (translucent).
     buildCeilingMesh(data, s.ceilingVertices);
 
-    // ---- Obstacles -> boxes. The PRD does not give obstacle heights so
-    //      a fixed value is used; this only affects visualisation. ----
+    // Obstacles -> boxes. The PRD does not give obstacle heights so
+    // a fixed value is used; this only affects visualisation.
     constexpr float kObstacleHeight = 1500.0f;
     s.obstacles.reserve(data.obstacles.size());
     for (const auto& o : data.obstacles) {
@@ -173,7 +195,7 @@ Scene SceneBuilder::build(const WarehouseData& data,
         s.obstacles.push_back(bi);
     }
 
-    // ---- Bays. ----
+    // Bays.
     //
     // Coordinate-convention note: the optimiser uses a 2D plane (x, y)
     // where +y is the bay's "depth" direction. In 3D we map that 2D y
@@ -192,7 +214,7 @@ Scene SceneBuilder::build(const WarehouseData& data,
         s.bays.push_back(bi);
     }
 
-    // ---- Gaps. ----
+    // Gaps.
     //
     // Each gap is a thin slab on the floor in front of the bay. The
     // anchor in WORLD coordinates is the bay's local (0, depth) corner

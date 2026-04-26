@@ -40,13 +40,17 @@ public:
     void run(const Scene& scene);
 
 private:
-    // ---- GLFW callbacks ------------------------------------------------
+    /*
+     * GLFW callbacks
+     */
     static void framebufferSizeCB(GLFWwindow* w, int width, int height);
     static void mouseButtonCB(GLFWwindow* w, int button, int action, int mods);
     static void cursorPosCB(GLFWwindow* w, double x, double y);
     static void keyCB(GLFWwindow* w, int key, int sc, int action, int mods);
 
-    // ---- internal helpers ---------------------------------------------
+    /*
+     * internal helpers
+     */
     void initGL();
     void buildStaticBuffers(const Scene& scene);
 
@@ -65,7 +69,9 @@ private:
     void drawPerimeter(const Scene& scene, const glm::mat4& vp);
     void drawCeiling(const Scene& scene, const glm::mat4& vp);
 
-    // ---- members -------------------------------------------------------
+    /*
+     * members
+     */
     GLFWwindow* m_window{nullptr};
     int m_winW{1280}, m_winH{800};
 

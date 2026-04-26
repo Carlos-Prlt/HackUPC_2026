@@ -3,9 +3,10 @@
 // 256 threads per workgroup. 24 workgroups (one for each strategy).
 layout(local_size_x = 256) in;
 
-// ------------------------------------------------------------------------- //
-// Types & Constants
-// ------------------------------------------------------------------------- //
+/*
+ * Types and Constants Definitions
+ * Core data structures matching the C++ definitions for warehouse entities.
+ */
 
 const uint kFree = 0;
 const uint kSolid = 1;
@@ -42,9 +43,10 @@ struct PlacedBay {
     float _pad1;
 };
 
-// ------------------------------------------------------------------------- //
-// Input / Output Buffers (SSBOs)
-// ------------------------------------------------------------------------- //
+/*
+ * Input and Output Buffers (SSBOs)
+ * Shader Storage Buffer Objects for passing data between CPU and GPU.
+ */
 
 // 0: Global params
 layout(std430, binding = 0) buffer ParamsBuffer {
@@ -109,9 +111,10 @@ layout(std430, binding = 7) buffer ResultsBuffer {
     StrategyResult results[];
 };
 
-// ------------------------------------------------------------------------- //
-// Shared Memory
-// ------------------------------------------------------------------------- //
+/*
+ * Shared Memory Declarations
+ * Workgroup-local memory for coordinating the strategy evaluation and reductions.
+ */
 shared int sharedSearchFrom;
 shared bool sharedFoundFreeCell;
 shared int sharedGx;
@@ -131,9 +134,10 @@ shared OBB sharedBestGap;
 shared bool sharedHasGap;
 shared int sharedMaxScore;
 
-// ------------------------------------------------------------------------- //
-// Helpers
-// ------------------------------------------------------------------------- //
+/*
+ * Helper Functions
+ * Utility functions for coordinate transformations, grid access, and intersection testing.
+ */
 
 float gridToWorldX(int gx) { return params.minX + float(gx) * params.cellSize; }
 float gridToWorldY(int gy) { return params.minY + float(gy) * params.cellSize; }
@@ -322,9 +326,10 @@ bool ceilingClearsOBB(OBB obb, float bayHeight) {
     return true;
 }
 
-// ------------------------------------------------------------------------- //
-// Main Logic
-// ------------------------------------------------------------------------- //
+/*
+ * Main Compute Logic
+ * Core evaluation loop for the warehouse optimization strategy.
+ */
 
 void main() {
     uint stratId = gl_WorkGroupID.x;

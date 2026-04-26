@@ -15,9 +15,10 @@
 namespace warehouse {
 namespace {
 
-//------------------------------------------------------------------------//
-// Local helpers (file-static, no leakage outside translation unit).
-//------------------------------------------------------------------------//
+/*
+ * Local helper functions for string manipulation and CSV parsing.
+ * These are kept file-static to prevent leakage outside this translation unit.
+ */
 
 /// Trim leading/trailing whitespace (in-place is unnecessary, return copy).
 std::string trim(const std::string& s) {
@@ -85,12 +86,19 @@ void parseCsv(const std::string& path, Fn&& onRow) {
 
 } // anonymous namespace
 
-//------------------------------------------------------------------------//
-// Public API
-//------------------------------------------------------------------------//
+/*
+ * Public API implementation for data input.
+ * Provides functions to read warehouse configuration from CSV files.
+ */
 
 std::vector<WarehouseVertex>
 DataInput::readWarehouse(const std::string& path) {
+    /*
+     * Reads the warehouse perimeter polygon from a CSV file.
+     * Expects 2 columns: X and Y coordinates.
+     * Throws an error if the polygon has fewer than 3 vertices,
+     * as a valid polygon must have at least 3 points.
+     */
     std::vector<WarehouseVertex> out;
     parseCsv(path, [&](const std::vector<std::string>& t) {
         if (t.size() < 2)
@@ -138,6 +146,12 @@ DataInput::readCeiling(const std::string& path) {
 
 std::vector<BayType>
 DataInput::readBayTypes(const std::string& path) {
+    /*
+     * Reads the types of bays available for placement from a CSV file.
+     * Expects 7 columns containing ID, dimensions (width, depth, height),
+     * gap constraint, capacity (nLoads), and price.
+     * Validates that all physical dimensions and values are positive.
+     */
     std::vector<BayType> out;
     parseCsv(path, [&](const std::vector<std::string>& t) {
         if (t.size() < 7)

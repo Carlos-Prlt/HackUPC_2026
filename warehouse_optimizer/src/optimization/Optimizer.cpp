@@ -508,6 +508,11 @@ Optimizer::Optimizer(const WarehouseData& data, float cellSize)
     : m_data(data), m_cellSize(cellSize) {}
 
 bool Optimizer::isInsidePolygon(float x, float y) const {
+    /*
+     * Ray-casting algorithm to determine if a point (x,y) lies inside the warehouse perimeter.
+     * We cast a horizontal ray to the right and count intersections with polygon edges.
+     * An odd number of intersections means the point is inside.
+     */
     const auto& p = m_data.perimeter;
     bool inside = false;
     const std::size_t n = p.size();
@@ -515,6 +520,7 @@ bool Optimizer::isInsidePolygon(float x, float y) const {
         const bool yi = (p[i].y > y);
         const bool yj = (p[j].y > y);
         if (yi != yj) {
+            // Calculate the X coordinate of the intersection point
             const float xCross =
                 (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x;
             if (x < xCross) inside = !inside;
@@ -524,15 +530,22 @@ bool Optimizer::isInsidePolygon(float x, float y) const {
 }
 
 void Optimizer::initBaseGrid() {
+    /*
+     * Initializes the host-side 2D base occupancy grid.
+     * Calculates grid dimensions based on the warehouse's bounding box and the specified cell size.
+     */
     const float W = m_data.maxX - m_data.minX;
     const float H = m_data.maxY - m_data.minY;
     m_gridW = std::max(1, static_cast<int>(std::ceil(W / m_cellSize)));
     m_gridH = std::max(1, static_cast<int>(std::ceil(H / m_cellSize)));
     
-    // Using packed 32-bit uints for 4 cells per word
+    // Allocate space for packed 32-bit uints (each word holds 4 byte-sized cells)
     int totalWords = (m_gridW * m_gridH + 3) / 4;
     m_baseGridPacked.assign(totalWords, 0);
 
+    /*
+     * Helper lambda to set the value of a specific grid cell within the packed array.
+     */
     auto setCell = [&](int gx, int gy, uint8_t val) {
         int idx = gy * m_gridW + gx;
         int wordIdx = idx / 4;
@@ -541,6 +554,9 @@ void Optimizer::initBaseGrid() {
         m_baseGridPacked[wordIdx] |= (static_cast<uint32_t>(val) << byteOffset);
     };
 
+    /*
+     * Helper lambda to retrieve the value of a specific grid cell.
+     */
     auto getCell = [&](int gx, int gy) -> uint8_t {
         int idx = gy * m_gridW + gx;
         int wordIdx = idx / 4;
@@ -580,6 +596,12 @@ void Optimizer::initBaseGrid() {
 }
 
 unsigned int Optimizer::compileComputeShader() const {
+    /*
+     * Compiles and links the OpenGL compute shader used for parallel optimization.
+     * The shader source is defined inline as a raw string literal (kComputeShaderSrc).
+     * It sets up the shader object, compiles it, and links it into a shader program,
+     * checking for and logging any compilation or linking errors.
+     */
     unsigned int shader = glCreateShader(GL_COMPUTE_SHADER);
     glShaderSource(shader, 1, &kComputeShaderSrc, nullptr);
     glCompileShader(shader);
@@ -665,8 +687,14 @@ struct GpuCeilingPoint {
 };
 
 Optimizer::Result Optimizer::run() {
+    /*
+     * Main execution entry point for the Optimizer.
+     * This method prepares data, runs the compute shader strategies concurrently,
+     * and processes the best results.
+     */
     initBaseGrid();
 
+    // 24 total strategies derived from 6 ranking modes and 4 sweep directions.
     static constexpr int kNumStrategies = 24;
     RankMode rankModes[6] = {
         RankMode::LOADS_AREA_PRICE, RankMode::LOADS_PRICE,
@@ -674,11 +702,16 @@ Optimizer::Result Optimizer::run() {
         RankMode::CHEAPEST, RankMode::BIGGEST
     };
 
-    // Calculate ranked indices for each rank mode
+    /*
+     * Pre-calculate the ranked order of bay types for each ranking mode.
+     * This avoids evaluating these scores on the GPU.
+     */
     std::vector<int> rankOrders[6];
     for (int r = 0; r < 6; ++r) {
         struct Ranked { int idx; double score; };
         std::vector<Ranked> ranked(m_data.bayTypes.size());
+        
+        // Calculate scores based on the current RankMode
         for (size_t i = 0; i < m_data.bayTypes.size(); ++i) {
             const auto& t = m_data.bayTypes[i];
             const double area = static_cast<double>(t.width) * t.depth;
@@ -693,10 +726,13 @@ Optimizer::Result Optimizer::run() {
             }
             ranked[i] = {static_cast<int>(i), score};
         }
+        
+        // Sort descending by score (highest is best)
         std::sort(ranked.begin(), ranked.end(), [](const Ranked& a, const Ranked& b) {
             if (a.score == b.score) return a.idx < b.idx;
             return a.score > b.score;
         });
+        
         for (const auto& rItem : ranked) rankOrders[r].push_back(rItem.idx);
     }
 

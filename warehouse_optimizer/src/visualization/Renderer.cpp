@@ -12,7 +12,7 @@ namespace warehouse {
 
 namespace {
 
-// ---------- Cube geometry: 8 vertices, 12 triangles, color per face. ----
+// Cube geometry: 8 vertices, 12 triangles, color per face.
 // Vertex layout: vec3 position. Per-face color is supplied via a uniform
 // (we keep the VBO simple).
 const float kCubeVertices[] = {
@@ -101,9 +101,10 @@ void main() { FragColor = vec4(uColor, 1.0); }
 
 } // anonymous namespace
 
-//---------------------------------------------------------------------------//
-// Construction / teardown
-//---------------------------------------------------------------------------//
+/*
+ * Initialization and Cleanup
+ * Constructor and destructor for the Renderer class, handling GLFW and OpenGL context setup.
+ */
 
 Renderer::Renderer(int width, int height, const std::string& title)
     : m_winW(width), m_winH(height) {
@@ -166,9 +167,10 @@ Renderer::~Renderer() {
     glfwTerminate();
 }
 
-//---------------------------------------------------------------------------//
-// GL setup
-//---------------------------------------------------------------------------//
+/*
+ * OpenGL Setup and Configuration
+ * Initializes OpenGL state, shaders, and static vertex buffers.
+ */
 
 void Renderer::initGL() {
     glEnable(GL_DEPTH_TEST);
@@ -241,9 +243,10 @@ void Renderer::buildStaticBuffers(const Scene& scene) {
     m_lineVertexCount    = static_cast<GLsizei>(scene.perimeterLineLoop.size());
 }
 
-//---------------------------------------------------------------------------//
-// Drawing primitives
-//---------------------------------------------------------------------------//
+/*
+ * Drawing Primitives
+ * Functions to render individual elements like boxes, outlines, floor, and perimeter.
+ */
 
 void Renderer::drawBox(const BoxInstance& b, const glm::mat4& vp) {
     glm::mat4 model(1.0f);
@@ -345,6 +348,10 @@ void Renderer::drawScene(const Scene& scene,
                          const glm::mat4& view,
                          const glm::mat4& proj,
                          bool topDown) {
+    /*
+     * Renders the complete 3D scene (floor, obstacles, bays, gaps, and perimeter).
+     * This function is used for both the main 3D view and the top-down minimap.
+     */
     const glm::mat4 vp = proj * view;
 
     // 1) Opaque pass with polygon offset so the line outlines drawn next
@@ -386,9 +393,10 @@ void Renderer::drawScene(const Scene& scene,
     }
 }
 
-//---------------------------------------------------------------------------//
-// Frame
-//---------------------------------------------------------------------------//
+/*
+ * Frame Rendering Logic
+ * Handles the main rendering loop, viewport configuration, and minimap rendering.
+ */
 
 void Renderer::renderMainView(const Scene& scene) {
     glViewport(0, 0, m_winW, m_winH);
@@ -411,6 +419,10 @@ void Renderer::renderMainView(const Scene& scene) {
 }
 
 void Renderer::renderMinimap(const Scene& scene) {
+    /*
+     * Renders a top-down orthographic view of the warehouse layout in the
+     * top-right corner of the window (picture-in-picture minimap).
+     */
     // Top-right corner picture-in-picture.
     const int mmW = std::max(180, m_winW / 4);
     const int mmH = std::max(140, m_winH / 4);
@@ -480,9 +492,10 @@ void Renderer::run(const Scene& scene) {
     }
 }
 
-//---------------------------------------------------------------------------//
-// Callbacks
-//---------------------------------------------------------------------------//
+/*
+ * Input Callbacks
+ * GLFW callbacks for handling window resize, mouse clicks, and keyboard events.
+ */
 
 void Renderer::framebufferSizeCB(GLFWwindow* w, int width, int height) {
     auto* self = static_cast<Renderer*>(glfwGetWindowUserPointer(w));

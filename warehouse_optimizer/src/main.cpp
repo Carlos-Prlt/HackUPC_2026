@@ -37,9 +37,10 @@ int main(int argc, char** argv) {
     const std::string dataDir = (argc >= 2) ? argv[1] : "data";
 
     try {
-        // -------------------------------------------------------------- //
-        // 1. Read Data                                                    //
-        // -------------------------------------------------------------- //
+        /*
+         * 1. Read Data
+         * Load warehouse configuration from CSV files in the specified directory.
+         */
         std::cout << "[1/5] Reading data from '" << dataDir << "'...\n";
         warehouse::WarehouseData data =
             warehouse::DataInput::loadAll(dataDir);
@@ -52,17 +53,18 @@ int main(int argc, char** argv) {
                   << data.minX << ", " << data.minY << "] x ["
                   << data.maxX << ", " << data.maxY << "]\n";
 
-        // -------------------------------------------------------------- //
-        // 1.5. Initialize OpenGL Context (via Renderer)                  //
-        // -------------------------------------------------------------- //
-        // The Renderer creates a hidden window which provides the OpenGL
-        // context needed by the Optimizer's GPU compute shaders.
+        /*
+         * 1.5. Initialize OpenGL Context
+         * The Renderer creates a hidden window which provides the OpenGL
+         * context needed by the Optimizer's GPU compute shaders.
+         */
         std::cout << "[2/5] Initializing GPU context...\n";
         warehouse::Renderer renderer(1280, 800, "Warehouse Optimizer - Visualizer");
 
-        // -------------------------------------------------------------- //
-        // 2. Run Optimization                                             //
-        // -------------------------------------------------------------- //
+        /*
+         * 2. Run Optimization
+         * Execute the GPU-accelerated greedy placement heuristic.
+         */
         std::cout << "[3/5] Running GPU optimizer...\n";
         const auto t0 = std::chrono::steady_clock::now();
 
@@ -78,9 +80,11 @@ int main(int argc, char** argv) {
         std::cout << "      placements: " << result.placements.size()
                   << ", elapsed: "        << elapsedMs << " ms\n";
 
-        // -------------------------------------------------------------- //
-        // 3. Print Terminal Output (per PRD: "ID, X, Y, Rotation")        //
-        // -------------------------------------------------------------- //
+        /*
+         * 3. Print Terminal Output
+         * Display the optimized bay placements and summary statistics.
+         * Format specified in PRD: "ID, X, Y, Rotation".
+         */
         std::cout << "[3/5] Optimised placements:\n";
         std::cout << "ID, X, Y, Rotation\n";
         for (const auto& p : result.placements) {
@@ -104,16 +108,18 @@ int main(int argc, char** argv) {
         std::cout << "Q score     : " << result.qScore             << '\n';
         std::cout << "----------------------------------------\n";
 
-        // -------------------------------------------------------------- //
-        // 4. Map to GL Objects                                            //
-        // -------------------------------------------------------------- //
+        /*
+         * 4. Map to GL Objects
+         * Convert the optimized data into a 3D scene for visualization.
+         */
         std::cout << "[4/5] Building scene for the renderer...\n";
         warehouse::Scene scene =
             warehouse::SceneBuilder::build(data, result.placements);
 
-        // -------------------------------------------------------------- //
-        // 5. Open OpenGL Window                                           //
-        // -------------------------------------------------------------- //
+        /*
+         * 5. Open OpenGL Window
+         * Display the 3D visualization to the user.
+         */
         std::cout << "[5/5] Opening visualisation window. "
                      "Drag the mouse to rotate; ESC to exit.\n";
         renderer.run(scene);

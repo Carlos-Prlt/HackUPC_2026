@@ -14,7 +14,7 @@
 //     Q = ( sum_prices / sum_loads ) ^ ( 2 - %areaUsed )
 //
 // Multi-strategy search
-// ---------------------
+
 // The optimizer runs the greedy heuristic multiple times with different
 // configurations (ranking functions × sweep directions) and returns the
 // result with the lowest Q score.
@@ -34,12 +34,12 @@
 //   - BR_TL : bottom-right → top-left
 //
 // Rotation search (exhaustive 1-degree steps)
-// --------------------------------------------
+
 // At every candidate cell we evaluate ALL 360 integer degrees (0..359).
 // Sin/cos values are precomputed in a lookup table for performance.
 //
 // Gap rule (per the PRD ampliation)
-// ---------------------------------
+
 // Each bay-type has a `gap` clearance that must be kept empty IN FRONT OF
 // the bay (the side where local Y = depth). The gap is a rectangle of
 // dimensions (width, gap) attached to the bay's "front" face, rotated
@@ -52,7 +52,7 @@
 //     sum.
 //
 // Implementation
-// --------------
+
 // The grid is a single uint8_t per cell with three states:
 //     0 : free
 //     1 : solid  (wall / obstacle / bay solid - nothing else may sit here)
@@ -121,7 +121,9 @@ private:
     static constexpr std::uint8_t kSolid = 1;
     static constexpr std::uint8_t kGap   = 2;
 
-    // ---- helpers -------------------------------------------------------
+    /*
+     * Internal Helper Methods
+     */
     void initBaseGrid();
     bool isInsidePolygon(float x, float y) const;
 
@@ -133,7 +135,9 @@ private:
     inline float gridToWorldX(int gx)  const { return m_data.minX + gx * m_cellSize; }
     inline float gridToWorldY(int gy)  const { return m_data.minY + gy * m_cellSize; }
 
-    // ---- state ---------------------------------------------------------
+    /*
+     * Internal State and Configuration
+     */
     const WarehouseData& m_data;
     float m_cellSize;
     int   m_gridW = 0;
